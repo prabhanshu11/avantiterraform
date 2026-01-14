@@ -25,7 +25,6 @@ jobs:
 
       - name: Deploy files to VPS
         run: |
-          ssh deploy@72.60.218.33 "sudo mkdir -p /var/www/avantiterraform && sudo chown -R deploy:deploy /var/www/avantiterraform"
           rsync -avz --delete \
             --exclude '.git' \
             --exclude '.github' \
@@ -33,6 +32,6 @@ jobs:
             --exclude 'README.md' \
             ./ deploy@72.60.218.33:/var/www/avantiterraform/
 
-      - name: Setup nginx and reload
+      - name: Reload nginx
         run: |
-          ssh deploy@72.60.218.33 'sudo bash /var/www/avantiterraform/nginx/setup.sh && sudo nginx -t && sudo systemctl reload nginx'
+          ssh deploy@72.60.218.33 'sudo nginx -t && sudo systemctl reload nginx'
