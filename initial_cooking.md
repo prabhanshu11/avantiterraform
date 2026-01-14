@@ -158,6 +158,13 @@ Sancoale, South Goa, Goa 403726
 
 ### What Needs Attention
 - careers@ alias needs to be created in Zoho (for hiring link)
-- v1 testing URL deployment
+- **NGINX UPDATE NEEDED**: Deploy user needs NOPASSWD for nginx commands
+  - Add to /etc/sudoers.d/deploy-nginx: `deploy ALL=(ALL) NOPASSWD: /bin/cp /var/www/avantiterraform/*, /usr/sbin/nginx, /bin/systemctl reload nginx`
 - Database integration (user table in personal-website DB)
 - Backup cron job setup
+
+### Deployment Status (2026-01-14)
+- v0 static: LIVE at https://avantiterraform.com/
+- v1 Next.js: Container built and running on port 3001
+- **PENDING**: nginx config update (sudo permission issue)
+- Preview URL (when nginx updated): https://avantiterraform.com/preview-560b5aae
