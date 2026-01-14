@@ -11,9 +11,10 @@ echo "🚀 Starting Avanti Terraform deployment..."
 # Navigate to project directory
 cd /var/www/avantiterraform
 
-# Pull latest changes from GitHub
+# Pull latest changes from GitHub (force reset to handle SSL config changes)
 echo "📥 Pulling latest changes from GitHub..."
-git pull origin master
+git fetch origin master
+git reset --hard origin/master
 
 # ==========================================
 # V0 - STATIC WEBSITE (root)
@@ -125,7 +126,7 @@ else
 fi
 
 echo "🔍 Testing v1 Next.js..."
-if curl -f http://localhost:3001/preview-560b5aae > /dev/null 2>&1; then
+if curl -f http://localhost:3001/new > /dev/null 2>&1; then
     echo "✅ V1 Next.js is healthy!"
 else
     echo "⚠️  V1 Next.js not responding"
@@ -143,5 +144,5 @@ fi
 echo "🎉 Deployment completed!"
 echo "================================================"
 echo "V0 (current): https://avantiterraform.com/"
-echo "V1 (preview): https://avantiterraform.com/preview-560b5aae"
+echo "V1 (new):     https://avantiterraform.com/new"
 echo "================================================"
