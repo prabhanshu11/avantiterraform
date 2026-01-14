@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  /* Color palette from spec */
+  --primary-text: #1a1a1a;
+  --secondary-text: #4a4a4a;
+  --accent: #2c3e50;
+  --cta: #d35400;
+  --cta-hover: #e67e22;
+  --background: #fafafa;
+  --card-bg: #ffffff;
+  --border: #e0e0e0;
+
+  /* Typography */
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-merriweather);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--primary-text);
+  --color-primary: var(--primary-text);
+  --color-secondary: var(--secondary-text);
+  --color-accent: var(--accent);
+  --color-cta: var(--cta);
+  --color-cta-hover: var(--cta-hover);
+  --color-card: var(--card-bg);
+  --color-border: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--primary-text);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Remove dark mode - brand requires light theme */
