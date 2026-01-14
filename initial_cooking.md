@@ -163,10 +163,9 @@ Sancoale, South Goa, Goa 403726
 - Database integration (user table in personal-website DB)
 - Backup cron job setup
 
-### Deployment Status (2026-01-14)
+### Deployment Status (2026-01-15)
 - v0 static: LIVE at https://avantiterraform.com/
-- v1 Next.js: Container on port 3001
-- Preview URL: https://avantiterraform.com/preview-560b5aae
+- v1 Next.js: LIVE at https://avantiterraform.com/new (port 3001)
 
 ### Deployment Pattern (matches personal-website)
 - **GitHub Actions** SSHes to VPS and runs `./deploy/run.sh`
