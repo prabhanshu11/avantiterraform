@@ -40,4 +40,13 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Scroll offset for fixed header */
+[id] {
+  scroll-margin-top: 100px;
+}
+
+section[id] {
+  scroll-margin-top: 100px;
+}
+
 /* Remove dark mode - brand requires light theme */

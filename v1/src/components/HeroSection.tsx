@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function HeroSection() {
   return (
@@ -6,29 +7,37 @@ export default function HeroSection() {
       <div className="max-w-6xl mx-auto px-4 py-16">
         {/* Dual Images */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
-          {/* Image 1: Weathered building */}
-          <div className="relative aspect-[16/10] bg-[#e0e0e0] rounded-lg overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center text-[#4a4a4a] text-sm">
-              {/* Placeholder for weathered building image */}
-              <div className="text-center p-4">
-                <svg className="w-16 h-16 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span className="opacity-60">What happens when done wrong</span>
-              </div>
+          {/* Image 1: Weathered building - what happens when done wrong */}
+          <div className="relative aspect-[16/10] rounded-lg overflow-hidden group">
+            <Image
+              src="/hero-deteriorated.jpg"
+              alt="Weathered concrete building showing deterioration - what happens when done wrong"
+              fill
+              className="object-cover grayscale-[30%] contrast-[90%] brightness-[95%] group-hover:scale-105 transition-transform duration-500"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4">
+              <span className="text-white/90 text-sm font-medium">
+                What happens when done wrong
+              </span>
             </div>
           </div>
 
-          {/* Image 2: Modern infrastructure */}
-          <div className="relative aspect-[16/10] bg-[#2c3e50] rounded-lg overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center text-white text-sm">
-              {/* Placeholder for modern building image */}
-              <div className="text-center p-4">
-                <svg className="w-16 h-16 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <span className="opacity-60">What&apos;s possible when done right</span>
-              </div>
+          {/* Image 2: Modern infrastructure - what's possible */}
+          <div className="relative aspect-[16/10] rounded-lg overflow-hidden group">
+            <Image
+              src="/hero-modern.jpg"
+              alt="Modern well-constructed building - what's possible when done right"
+              fill
+              className="object-cover grayscale-[30%] contrast-[90%] brightness-[95%] group-hover:scale-105 transition-transform duration-500"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4">
+              <span className="text-white/90 text-sm font-medium">
+                What&apos;s possible when done right
+              </span>
             </div>
           </div>
         </div>

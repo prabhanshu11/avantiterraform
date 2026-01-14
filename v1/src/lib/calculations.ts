@@ -13,20 +13,55 @@ export const SOIL_PARAMS: Record<string, SoilParams> = {
   rock: { unitWeight: 25, frictionAngle: 45, cohesion: 50 },
 };
 
+// Rankine earth pressure coefficient (simplified, ignores slope)
 export function calculateActiveEarthPressureCoeff(phi: number): number {
   const phiRad = (phi * Math.PI) / 180;
   return (1 - Math.sin(phiRad)) / (1 + Math.sin(phiRad));
 }
 
+// Coulomb earth pressure coefficient (accounts for slope angle)
+export function calculateCoulombKa(
+  phi: number,     // Soil friction angle (degrees)
+  beta: number,    // Slope angle (degrees)
+  delta: number = 0 // Wall friction angle (degrees), default smooth
+): number {
+  const phiRad = (phi * Math.PI) / 180;
+  const betaRad = (beta * Math.PI) / 180;
+  const deltaRad = (delta * Math.PI) / 180;
+  const alphaRad = Math.PI / 2; // Vertical wall (90 degrees)
+
+  // Coulomb formula
+  const sinPhiBeta = Math.sin(phiRad + deltaRad);
+  const sinPhiAlpha = Math.sin(phiRad - betaRad);
+  const sinAlphaDelta = Math.sin(alphaRad - deltaRad);
+  const sinAlphaBeta = Math.sin(alphaRad + betaRad);
+
+  const numerator = Math.pow(Math.sin(alphaRad + phiRad), 2);
+  const sqrtTerm = Math.sqrt((sinPhiBeta * sinPhiAlpha) / (sinAlphaDelta * sinAlphaBeta));
+  const denominator = Math.pow(Math.sin(alphaRad), 2) * sinAlphaDelta * Math.pow(1 + sqrtTerm, 2);
+
+  // Prevent invalid values
+  if (beta >= phi || denominator <= 0) {
+    // Slope too steep for soil - use Rankine as fallback
+    return calculateActiveEarthPressureCoeff(phi);
+  }
+
+  return numerator / denominator;
+}
+
 export function calculateOverturningFOS(
   wallHeight: number,
   wallThickness: number,
-  soilType: string
+  soilType: string,
+  slopeAngle: number = 0
 ): number {
   const soil = SOIL_PARAMS[soilType];
   if (!soil) return 0;
 
-  const Ka = calculateActiveEarthPressureCoeff(soil.frictionAngle);
+  // Use Coulomb Ka if slope present, otherwise Rankine
+  const Ka = slopeAngle > 0
+    ? calculateCoulombKa(soil.frictionAngle, slopeAngle)
+    : calculateActiveEarthPressureCoeff(soil.frictionAngle);
 
   // Active earth pressure resultant (kN/m)
   const Pa = 0.5 * Ka * soil.unitWeight * wallHeight * wallHeight;
@@ -45,12 +80,16 @@ export function calculateOverturningFOS(
 export function calculateSlidingFOS(
   wallHeight: number,
   wallThickness: number,
-  soilType: string
+  soilType: string,
+  slopeAngle: number = 0
 ): number {
   const soil = SOIL_PARAMS[soilType];
   if (!soil) return 0;
 
-  const Ka = calculateActiveEarthPressureCoeff(soil.frictionAngle);
+  // Use Coulomb Ka if slope present
+  const Ka = slopeAngle > 0
+    ? calculateCoulombKa(soil.frictionAngle, slopeAngle)
+    : calculateActiveEarthPressureCoeff(soil.frictionAngle);
 
   // Horizontal earth pressure force
   const Pa = 0.5 * Ka * soil.unitWeight * wallHeight * wallHeight;
@@ -71,6 +110,7 @@ export function calculateSlidingFOS(
 export function calculatePreliminaryWallThickness(
   wallHeight: number,
   soilType: string,
+  slopeAngle: number = 0,
   targetFOS: number = 2.0
 ): number {
   // Iteratively find wall thickness for target overturning FOS
@@ -79,7 +119,7 @@ export function calculatePreliminaryWallThickness(
   const increment = 0.05;
 
   while (thickness < maxThickness) {
-    const fos = calculateOverturningFOS(wallHeight, thickness, soilType);
+    const fos = calculateOverturningFOS(wallHeight, thickness, soilType, slopeAngle);
     if (fos >= targetFOS) {
       return thickness;
     }
@@ -91,14 +131,19 @@ export function calculatePreliminaryWallThickness(
 
 export function calculateFoundationDepth(
   wallHeight: number,
-  soilType: string
+  soilType: string,
+  slopeAngle: number = 0
 ): number {
   // Rule of thumb: foundation depth = 10-15% of wall height, minimum 0.6m
+  // Steeper slopes need deeper foundations
   const soil = SOIL_PARAMS[soilType];
   if (!soil) return 0.6;
 
-  // Softer soils need deeper foundations
-  const depthFactor = soilType === 'rock' ? 0.1 : soilType === 'gravel' ? 0.12 : soilType === 'sand' ? 0.15 : 0.2;
+  // Base depth factor by soil type
+  const baseDepthFactor = soilType === 'rock' ? 0.1 : soilType === 'gravel' ? 0.12 : soilType === 'sand' ? 0.15 : 0.2;
 
-  return Math.max(0.6, wallHeight * depthFactor);
+  // Increase for steeper slopes
+  const slopeMultiplier = 1 + (slopeAngle / 90) * 0.5; // Up to 50% more for steepest slopes
+
+  return Math.max(0.6, wallHeight * baseDepthFactor * slopeMultiplier);
 }

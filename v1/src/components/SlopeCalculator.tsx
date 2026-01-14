@@ -22,10 +22,10 @@ export default function SlopeCalculator() {
   const [soilType, setSoilType] = useState("clay");
 
   const results = useMemo(() => {
-    const wallThickness = calculatePreliminaryWallThickness(wallHeight, soilType);
-    const overturningFOS = calculateOverturningFOS(wallHeight, wallThickness, soilType);
-    const slidingFOS = calculateSlidingFOS(wallHeight, wallThickness, soilType);
-    const foundationDepth = calculateFoundationDepth(wallHeight, soilType);
+    const wallThickness = calculatePreliminaryWallThickness(wallHeight, soilType, slopeAngle);
+    const overturningFOS = calculateOverturningFOS(wallHeight, wallThickness, soilType, slopeAngle);
+    const slidingFOS = calculateSlidingFOS(wallHeight, wallThickness, soilType, slopeAngle);
+    const foundationDepth = calculateFoundationDepth(wallHeight, soilType, slopeAngle);
 
     return {
       wallThickness,
@@ -33,9 +33,13 @@ export default function SlopeCalculator() {
       slidingFOS,
       foundationDepth,
     };
-  }, [wallHeight, soilType]);
+  }, [wallHeight, soilType, slopeAngle]);
 
   const soil = SOIL_PARAMS[soilType];
+
+  // Calculate slope geometry for SVG
+  const slopeRad = (slopeAngle * Math.PI) / 180;
+  const slopeRun = (wallHeight * 30) / Math.tan(slopeRad);
 
   return (
     <div className="bg-white border border-[#e0e0e0] rounded-lg overflow-hidden">
@@ -50,13 +54,30 @@ export default function SlopeCalculator() {
             {/* Ground line */}
             <line x1="50" y1="200" x2="350" y2="200" stroke="#4a4a4a" strokeWidth="2" />
 
-            {/* Slope */}
+            {/* Slope - angle changes with slider */}
             <polygon
-              points={`150,200 250,${200 - wallHeight * 30} 250,200`}
+              points={`${250 - Math.min(slopeRun, 150)},200 250,${200 - wallHeight * 30} 250,200`}
               fill="#d4a574"
               stroke="#8b6914"
               strokeWidth="1"
             />
+
+            {/* Slope angle arc */}
+            <path
+              d={`M ${250 - 40} 200 A 40 40 0 0 1 ${250 - 40 * Math.cos(slopeRad)} ${200 - 40 * Math.sin(slopeRad)}`}
+              fill="none"
+              stroke="#d35400"
+              strokeWidth="1.5"
+            />
+            <text
+              x={250 - 55}
+              y={190}
+              fill="#d35400"
+              fontSize="11"
+              fontWeight="bold"
+            >
+              {slopeAngle}°
+            </text>
 
             {/* Retaining wall */}
             <rect
@@ -101,17 +122,17 @@ export default function SlopeCalculator() {
               W
             </text>
 
-            {/* Earth pressure arrow */}
+            {/* Earth pressure arrow - angle varies with slope */}
             <line
-              x1="230"
+              x1={210}
               y1={200 - wallHeight * 15}
-              x2="250"
+              x2={245}
               y2={200 - wallHeight * 15}
               stroke="#dc2626"
               strokeWidth="2"
               markerEnd="url(#arrowRed)"
             />
-            <text x="205" y={200 - wallHeight * 15 + 4} fill="#dc2626" fontSize="12" fontWeight="bold">
+            <text x="180" y={200 - wallHeight * 15 + 4} fill="#dc2626" fontSize="12" fontWeight="bold">
               Pa
             </text>
 
@@ -139,10 +160,13 @@ export default function SlopeCalculator() {
             <text x="55" y="215" fill="#4a4a4a" fontSize="10">
               Ground Level
             </text>
-            <text x="255" y={195 - wallHeight * 30} fill="#4a4a4a" fontSize="10">
+            <text x="310" y={195 - wallHeight * 30} fill="#4a4a4a" fontSize="10">
               H = {wallHeight}m
             </text>
-            <text x="255" y="230" fill="#4a4a4a" fontSize="10">
+            <text x="310" y="218" fill="#4a4a4a" fontSize="10">
+              t = {results.wallThickness.toFixed(2)}m
+            </text>
+            <text x="310" y="235" fill="#4a4a4a" fontSize="10">
               D = {results.foundationDepth.toFixed(1)}m
             </text>
 
@@ -166,7 +190,7 @@ export default function SlopeCalculator() {
           <div>
             <label className="flex justify-between text-sm font-medium text-[#1a1a1a] mb-2">
               <span>Slope Angle</span>
-              <span className="text-[#d35400]">{slopeAngle}°</span>
+              <span className="text-[#d35400] font-bold">{slopeAngle}°</span>
             </label>
             <input
               type="range"
@@ -174,14 +198,18 @@ export default function SlopeCalculator() {
               max="60"
               value={slopeAngle}
               onChange={(e) => setSlopeAngle(Number(e.target.value))}
-              className="w-full h-2 bg-[#e0e0e0] rounded-lg appearance-none cursor-pointer"
+              className="w-full h-2 bg-[#e0e0e0] rounded-lg appearance-none cursor-pointer accent-[#d35400]"
             />
+            <div className="flex justify-between text-xs text-[#4a4a4a] mt-1">
+              <span>15° (gentle)</span>
+              <span>60° (steep)</span>
+            </div>
           </div>
 
           <div>
             <label className="flex justify-between text-sm font-medium text-[#1a1a1a] mb-2">
               <span>Wall Height</span>
-              <span className="text-[#d35400]">{wallHeight}m</span>
+              <span className="text-[#d35400] font-bold">{wallHeight}m</span>
             </label>
             <input
               type="range"
@@ -190,8 +218,12 @@ export default function SlopeCalculator() {
               step="0.5"
               value={wallHeight}
               onChange={(e) => setWallHeight(Number(e.target.value))}
-              className="w-full h-2 bg-[#e0e0e0] rounded-lg appearance-none cursor-pointer"
+              className="w-full h-2 bg-[#e0e0e0] rounded-lg appearance-none cursor-pointer accent-[#d35400]"
             />
+            <div className="flex justify-between text-xs text-[#4a4a4a] mt-1">
+              <span>1m</span>
+              <span>10m</span>
+            </div>
           </div>
 
           <div>
@@ -199,7 +231,7 @@ export default function SlopeCalculator() {
             <select
               value={soilType}
               onChange={(e) => setSoilType(e.target.value)}
-              className="w-full p-3 border border-[#e0e0e0] rounded-lg focus:border-[#d35400] focus:outline-none"
+              className="w-full p-3 border border-[#e0e0e0] rounded-lg focus:border-[#d35400] focus:outline-none bg-white"
             >
               {soilTypes.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -230,6 +262,7 @@ export default function SlopeCalculator() {
               <p className={`text-2xl font-bold ${results.overturningFOS >= 2 ? "text-green-600" : "text-red-600"}`}>
                 {results.overturningFOS.toFixed(2)} {results.overturningFOS >= 2 ? "✓" : "✗"}
               </p>
+              <p className="text-xs text-[#4a4a4a] mt-1">Required: ≥ 2.0</p>
             </div>
 
             <div className="bg-[#fafafa] p-4 rounded-lg">
@@ -237,6 +270,7 @@ export default function SlopeCalculator() {
               <p className={`text-2xl font-bold ${results.slidingFOS >= 1.5 ? "text-green-600" : "text-red-600"}`}>
                 {results.slidingFOS.toFixed(2)} {results.slidingFOS >= 1.5 ? "✓" : "✗"}
               </p>
+              <p className="text-xs text-[#4a4a4a] mt-1">Required: ≥ 1.5</p>
             </div>
 
             <div className="bg-[#fafafa] p-4 rounded-lg">
