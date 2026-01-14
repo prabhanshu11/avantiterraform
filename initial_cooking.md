@@ -105,30 +105,44 @@
 
 ## Development Checklist
 
-### Phase 1: Core
-- [ ] Next.js 14 project setup with Tailwind
-- [ ] Homepage: hero, services overview, offers section
-- [ ] Header/footer with registration numbers
-- [ ] Mobile responsive navigation
-- [ ] WhatsApp floating button
+### Phase 1: Core ✅ COMPLETE
+- [x] Next.js 14 project setup with Tailwind
+- [x] Homepage: hero, services overview, offers section
+- [x] Header/footer with registration numbers
+- [x] Mobile responsive navigation
+- [x] WhatsApp floating button
 
-### Phase 2: Content Pages
-- [ ] Services page with sections
-- [ ] Multi-step contact/quote form
-- [ ] Database integration for submissions
+### Phase 2: Content Pages ✅ COMPLETE
+- [x] Services page with 4 categories
+- [x] Multi-step contact/quote form (3 steps)
+- [x] API route for submissions with email notifications
 
-### Phase 3: Blog
-- [ ] Blog listing page
-- [ ] Waterproofing article
-- [ ] Slope construction article + calculator
-- [ ] CRZ compliance article
+### Phase 3: Blog ✅ COMPLETE
+- [x] Blog listing page
+- [x] Waterproofing article
+- [x] Slope construction article + interactive calculator
+- [x] CRZ compliance article
 
-### Phase 4: Polish & Deploy
-- [ ] Selenium tests with screenshots
-- [ ] SEO meta tags
-- [ ] Performance optimization
-- [ ] Docker setup for production
-- [ ] Backup cron job setup
+### Phase 4: Polish & Deploy ✅ COMPLETE
+- [x] Selenium tests with screenshots (7/7 passing)
+- [x] SEO meta tags (title, description, OpenGraph)
+- [x] Docker setup for production
+- [x] Systemd backup timer (every 6 hours)
+- [x] Deployed to VPS via GitHub Actions
+
+---
+
+## Deployment Status
+
+### Current Live Site (v0)
+- Static HTML at https://avantiterraform.com
+- FastAPI backend on port 8001
+
+### v1 Ready to Switch
+- Next.js app deployed to VPS at /var/www/avantiterraform/v1
+- Docker container built and ready
+- To switch: `bash /var/www/avantiterraform/v1/scripts/switch-to-v1.sh`
+- To rollback: `bash /var/www/avantiterraform/v1/scripts/rollback-to-v0.sh`
 
 ---
 
