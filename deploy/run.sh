@@ -97,14 +97,18 @@ else
 fi
 
 # ==========================================
-# SSL (if not already configured)
+# SSL CONFIGURATION
 # ==========================================
+# Always reinstall SSL config after copying nginx config, since the repo
+# version is HTTP-only and certbot needs to add the SSL directives
 if [ ! -f /etc/letsencrypt/live/avantiterraform.com/fullchain.pem ]; then
-    echo "🔒 Setting up SSL certificate..."
+    echo "🔒 Obtaining new SSL certificate..."
     sudo certbot --nginx -d avantiterraform.com -d www.avantiterraform.com \
         --non-interactive --agree-tos --email bharat@avantiterraform.com --redirect || true
 else
-    echo "🔒 SSL certificate already exists"
+    echo "🔒 Reinstalling SSL configuration to nginx..."
+    sudo certbot --nginx -d avantiterraform.com -d www.avantiterraform.com \
+        --reinstall --redirect --non-interactive || true
 fi
 
 # ==========================================
