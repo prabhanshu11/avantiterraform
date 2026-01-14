@@ -22,4 +22,4 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} "cd /var/www/avantiterraform && ./deploy/run.sh"
+          ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} "cd /var/www/avantiterraform && git fetch origin master && git reset --hard origin/master && ./deploy/run.sh"
