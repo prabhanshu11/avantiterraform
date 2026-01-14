@@ -23,52 +23,16 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H 72.60.218.33 >> ~/.ssh/known_hosts
 
-      - name: Deploy to VPS
+      - name: Deploy files to VPS
         run: |
-          # Create deployment directory if not exists
           ssh root@72.60.218.33 "mkdir -p /var/www/avantiterraform"
-
-          # Sync website files
           rsync -avz --delete \
             --exclude '.git' \
             --exclude '.github' \
-            --exclude 'nginx' \
             --exclude 'scripts' \
             --exclude 'README.md' \
             ./ root@72.60.218.33:/var/www/avantiterraform/
 
-      - name: Setup nginx (first deploy auto-config)
+      - name: Setup nginx and reload
         run: |
-          ssh root@72.60.218.33 << 'ENDSSH'
-            # Check if nginx config exists
-            if [ ! -f /etc/nginx/sites-enabled/avantiterraform ]; then
-              echo "First deploy - setting up nginx..."
-
-              # Create HTTP-only config (for SSL cert setup)
-              cat > /etc/nginx/sites-available/avantiterraform << 'NGINXEOF'
-server {
-    listen 80;
-    listen [::]:80;
-    server_name avantiterraform.com www.avantiterraform.com;
-
-    root /var/www/avantiterraform;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/avantiterraform;
-    }
-}
-NGINXEOF
-
-              ln -sf /etc/nginx/sites-available/avantiterraform /etc/nginx/sites-enabled/
-              echo "HTTP nginx config created. Run certbot manually for HTTPS."
-            fi
-          ENDSSH
-
-      - name: Reload nginx
-        run: |
-          ssh root@72.60.218.33 "nginx -t && systemctl reload nginx"
+          ssh root@72.60.218.33 'bash /var/www/avantiterraform/nginx/setup.sh && nginx -t && systemctl reload nginx'
