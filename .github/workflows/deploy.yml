@@ -2,7 +2,8 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -13,38 +14,61 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup SSH
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add VPS to known hosts
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H 72.60.218.33 >> ~/.ssh/known_hosts
 
       - name: Deploy to VPS
         run: |
           # Create deployment directory if not exists
-          ssh -i ~/.ssh/id_ed25519 root@72.60.218.33 "mkdir -p /var/www/avantiterraform"
+          ssh root@72.60.218.33 "mkdir -p /var/www/avantiterraform"
 
           # Sync website files
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/id_ed25519" \
             --exclude '.git' \
             --exclude '.github' \
             --exclude 'nginx' \
-            --exclude 'deploy.sh' \
+            --exclude 'scripts' \
             --exclude 'README.md' \
             ./ root@72.60.218.33:/var/www/avantiterraform/
 
-      - name: Setup nginx config (first deploy only)
+      - name: Setup nginx (first deploy auto-config)
         run: |
-          # Check if nginx config exists, if not, set it up
-          ssh -i ~/.ssh/id_ed25519 root@72.60.218.33 << 'ENDSSH'
-            if [ ! -f /etc/nginx/sites-available/avantiterraform ]; then
+          ssh root@72.60.218.33 << 'ENDSSH'
+            # Check if nginx config exists
+            if [ ! -f /etc/nginx/sites-enabled/avantiterraform ]; then
               echo "First deploy - setting up nginx..."
+
+              # Create HTTP-only config (for SSL cert setup)
+              cat > /etc/nginx/sites-available/avantiterraform << 'NGINXEOF'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name avantiterraform.com www.avantiterraform.com;
+
+    root /var/www/avantiterraform;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/avantiterraform;
+    }
+}
+NGINXEOF
+
+              ln -sf /etc/nginx/sites-available/avantiterraform /etc/nginx/sites-enabled/
+              echo "HTTP nginx config created. Run certbot manually for HTTPS."
             fi
           ENDSSH
 
       - name: Reload nginx
         run: |
-          ssh -i ~/.ssh/id_ed25519 root@72.60.218.33 "nginx -t && systemctl reload nginx"
+          ssh root@72.60.218.33 "nginx -t && systemctl reload nginx"
