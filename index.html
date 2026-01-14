@@ -317,47 +317,26 @@
             background: var(--accent-hover);
         }
 
-        /* Hiring Banner */
-        .hiring-banner {
-            background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
-            padding: 0.75rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            font-size: 0.9rem;
+        /* Careers Section */
+        #careers {
+            background: var(--white);
+            padding: 3rem 2rem;
+            text-align: center;
         }
 
-        .hiring-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            background: #dc2626;
-            color: white;
-            padding: 0.3rem 0.75rem;
-            border-radius: 999px;
-            font-weight: 600;
-            font-size: 0.8rem;
+        .careers-line {
+            font-size: 1.1rem;
+            color: var(--text-light);
         }
 
-        .hiring-text {
-            color: #92400e;
-        }
-
-        .hiring-btn {
-            background: #1a1a2e;
-            color: white;
-            padding: 0.4rem 1rem;
-            border-radius: 4px;
+        .careers-line a {
+            color: #2563eb;
             text-decoration: none;
             font-weight: 500;
-            font-size: 0.85rem;
-            transition: background 0.3s;
         }
 
-        .hiring-btn:hover {
-            background: #e94560;
+        .careers-line a:hover {
+            text-decoration: underline;
         }
 
         /* Footer */
@@ -469,6 +448,12 @@
         </div>
     </section>
 
+    <section id="careers">
+        <div class="container">
+            <p class="careers-line">We're hiring — join our team. <a href="mailto:careers@avantiterraform.com">Apply Now</a></p>
+        </div>
+    </section>
+
     <section id="contact">
         <div class="container">
             <h2>Let's Build Something</h2>
@@ -562,17 +547,6 @@
             </div>
         </div>
     </section>
-
-    <div class="hiring-banner">
-        <span class="hiring-pill">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/>
-            </svg>
-            We're Hiring
-        </span>
-        <span class="hiring-text">Join our team and build the future</span>
-        <a href="mailto:careers@avantiterraform.com" class="hiring-btn">Apply Now</a>
-    </div>
 
     <footer>
         <p>&copy; 2025 Avanti Terraform. All rights reserved.</p>
