@@ -16,6 +16,7 @@ echo "Setting up $DOMAIN on VPS..."
 # 1. Create web directory with deploy user ownership
 echo "Creating web directory..."
 mkdir -p "$WEBROOT"
+mkdir -p "$WEBROOT/data"
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$WEBROOT"
 chmod 755 "$WEBROOT"
 
@@ -38,6 +39,15 @@ server {
     location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
         expires 30d;
         add_header Cache-Control "public, immutable";
+    }
+
+    # API proxy to contact form backend
+    location /api/ {
+        proxy_pass http://127.0.0.1:8001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
     location / {
@@ -71,18 +81,36 @@ cat > "$WEBROOT/index.html" << 'HTML'
 HTML
 chown "$DEPLOY_USER:$DEPLOY_USER" "$WEBROOT/index.html"
 
+# 6. Create .env template for API (email notifications)
+if [ ! -f "$WEBROOT/.env" ]; then
+    cat > "$WEBROOT/.env" << 'ENVFILE'
+# SMTP settings for contact form email notifications
+# Using Zoho Mail SMTP
+SMTP_HOST=smtp.zoho.in
+SMTP_PORT=587
+SMTP_USER=bharat@avantiterraform.com
+SMTP_PASS=your_zoho_app_password_here
+NOTIFY_EMAIL=bharat@avantiterraform.com
+ENVFILE
+    chown "$DEPLOY_USER:$DEPLOY_USER" "$WEBROOT/.env"
+    echo "Created .env template - UPDATE SMTP_PASS with Zoho app password!"
+fi
+
 echo ""
 echo "=========================================="
 echo "Setup complete! Next steps:"
 echo ""
 echo "1. Update DNS: Point avantiterraform.com to 72.60.218.33"
 echo "   - A record: @ -> 72.60.218.33"
-echo "   - CNAME: www -> avantiterraform.com (or A record)"
+echo "   - CNAME: www -> avantiterraform.com"
 echo ""
 echo "2. Wait for DNS propagation (5-30 min)"
 echo ""
 echo "3. Get SSL certificate:"
 echo "   certbot --nginx -d avantiterraform.com -d www.avantiterraform.com"
 echo ""
-echo "4. Trigger GitHub Actions deploy or push to master"
+echo "4. Update /var/www/avantiterraform/.env with Zoho app password"
+echo "   (Generate app password at: https://accounts.zoho.in/)"
+echo ""
+echo "5. Trigger GitHub Actions deploy (push to master)"
 echo "=========================================="

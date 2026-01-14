@@ -30,7 +30,25 @@ jobs:
             --exclude '.github' \
             --exclude 'scripts' \
             --exclude 'README.md' \
+            --exclude 'data' \
+            --exclude '.env' \
             ./ deploy@72.60.218.33:/var/www/avantiterraform/
+
+      - name: Build and restart API
+        run: |
+          ssh deploy@72.60.218.33 << 'ENDSSH'
+            cd /var/www/avantiterraform/api
+            docker build -t avantiterraform-api .
+            docker stop avantiterraform-api 2>/dev/null || true
+            docker rm avantiterraform-api 2>/dev/null || true
+            docker run -d \
+              --name avantiterraform-api \
+              --restart always \
+              -p 8001:8001 \
+              -v /var/www/avantiterraform/data:/var/www/avantiterraform/data \
+              --env-file /var/www/avantiterraform/.env \
+              avantiterraform-api
+          ENDSSH
 
       - name: Reload nginx
         run: |
