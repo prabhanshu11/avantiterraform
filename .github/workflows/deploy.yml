@@ -23,7 +23,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H 72.60.218.33 >> ~/.ssh/known_hosts
 
-      - name: Deploy current site (v0) to VPS
+      - name: Deploy v0 static files to VPS
         run: |
           rsync -avz --delete \
             --exclude '.git' \
@@ -36,15 +36,16 @@ jobs:
             --exclude 'initial_cooking.md' \
             ./ deploy@72.60.218.33:/var/www/avantiterraform/
 
-      - name: Deploy v1 to VPS
+      - name: Deploy v1 Next.js files
         run: |
           rsync -avz --delete \
             --exclude 'node_modules' \
             --exclude '.next' \
-            --exclude '.git' \
+            --exclude 'screenshots' \
+            --exclude 'tests' \
             ./v1/ deploy@72.60.218.33:/var/www/avantiterraform/v1/
 
-      - name: Build and restart API (v0)
+      - name: Build and restart API container
         run: |
           ssh deploy@72.60.218.33 << 'ENDSSH'
             cd /var/www/avantiterraform/api
@@ -60,40 +61,26 @@ jobs:
               avantiterraform-api
           ENDSSH
 
-      - name: Build and start v1 container for testing
+      - name: Build and restart v1 Next.js container
         run: |
           ssh deploy@72.60.218.33 << 'ENDSSH'
             cd /var/www/avantiterraform/v1
-            # Install dependencies and build on VPS
-            if command -v npm &> /dev/null; then
-              npm ci --legacy-peer-deps 2>/dev/null || npm install
-              npm run build
-            fi
-            # Build Docker image
+            npm install --production=false
+            npm run build
             docker build -t avantiterraform-v1 .
-            # Stop existing container if running
             docker stop avantiterraform-v1 2>/dev/null || true
             docker rm avantiterraform-v1 2>/dev/null || true
-            # Start container for testing preview
             docker run -d \
               --name avantiterraform-v1 \
               --restart always \
               -p 3001:3000 \
-              -v /var/www/avantiterraform/data:/data \
-              -e DATA_DIR=/data \
-              -e NODE_ENV=production \
               avantiterraform-v1
-            echo "v1 container started on port 3001"
           ENDSSH
 
-      - name: Reload nginx
+      - name: Update nginx config
         run: |
-          ssh deploy@72.60.218.33 'sudo nginx -t && sudo systemctl reload nginx'
-
-      - name: Deployment summary
-        run: |
-          echo "=== Deployment Complete ==="
-          echo "v0 (live): https://avantiterraform.com"
-          echo "v1 (preview): https://avantiterraform.com/testing/v1-8f4a2b9c/"
-          echo ""
-          echo "To make v1 live, run: bash /var/www/avantiterraform/v1/scripts/switch-to-v1.sh"
+          ssh deploy@72.60.218.33 << 'ENDSSH'
+            sudo cp /var/www/avantiterraform/v1/nginx/avantiterraform-v1.conf /etc/nginx/sites-available/avantiterraform.conf
+            sudo ln -sf /etc/nginx/sites-available/avantiterraform.conf /etc/nginx/sites-enabled/
+            sudo nginx -t && sudo systemctl reload nginx
+          ENDSSH
