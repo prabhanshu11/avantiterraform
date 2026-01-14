@@ -23,7 +23,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H 72.60.218.33 >> ~/.ssh/known_hosts
 
-      - name: Deploy files to VPS
+      - name: Deploy current site (v0) to VPS
         run: |
           rsync -avz --delete \
             --exclude '.git' \
@@ -32,9 +32,19 @@ jobs:
             --exclude 'README.md' \
             --exclude 'data' \
             --exclude '.env' \
+            --exclude 'v1' \
+            --exclude 'initial_cooking.md' \
             ./ deploy@72.60.218.33:/var/www/avantiterraform/
 
-      - name: Build and restart API
+      - name: Deploy v1 to VPS
+        run: |
+          rsync -avz --delete \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.git' \
+            ./v1/ deploy@72.60.218.33:/var/www/avantiterraform/v1/
+
+      - name: Build and restart API (v0)
         run: |
           ssh deploy@72.60.218.33 << 'ENDSSH'
             cd /var/www/avantiterraform/api
@@ -50,6 +60,25 @@ jobs:
               avantiterraform-api
           ENDSSH
 
+      - name: Build v1 container (prepare for switch)
+        run: |
+          ssh deploy@72.60.218.33 << 'ENDSSH'
+            cd /var/www/avantiterraform/v1
+            # Install dependencies and build on VPS
+            if command -v npm &> /dev/null; then
+              npm ci --legacy-peer-deps
+              npm run build
+            fi
+            # Build Docker image (ready to switch)
+            docker build -t avantiterraform-v1 . || echo "Docker build skipped - run switch script when ready"
+          ENDSSH
+
       - name: Reload nginx
         run: |
           ssh deploy@72.60.218.33 'sudo nginx -t && sudo systemctl reload nginx'
+
+      - name: Deployment summary
+        run: |
+          echo "=== Deployment Complete ==="
+          echo "v0 (current): https://avantiterraform.com"
+          echo "v1 (ready): Run 'bash /var/www/avantiterraform/v1/scripts/switch-to-v1.sh' to switch"
