@@ -165,6 +165,11 @@ Sancoale, South Goa, Goa 403726
 
 ### Deployment Status (2026-01-14)
 - v0 static: LIVE at https://avantiterraform.com/
-- v1 Next.js: Container built and running on port 3001
-- **PENDING**: nginx config update (sudo permission issue)
-- Preview URL (when nginx updated): https://avantiterraform.com/preview-560b5aae
+- v1 Next.js: Container on port 3001
+- Preview URL: https://avantiterraform.com/preview-560b5aae
+
+### Deployment Pattern (matches personal-website)
+- **GitHub Actions** SSHes to VPS and runs `./deploy/run.sh`
+- **run.sh** does: git pull, npm build, docker build/run, nginx update
+- **setup-vps.sh** for one-time initial setup
+- **deploy user** has NOPASSWD for nginx/certbot commands

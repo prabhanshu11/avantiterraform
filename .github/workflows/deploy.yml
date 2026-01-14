@@ -2,17 +2,14 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -21,66 +18,8 @@ jobs:
       - name: Add VPS to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H 72.60.218.33 >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy v0 static files to VPS
+      - name: Deploy via SSH
         run: |
-          rsync -avz --delete \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude 'scripts' \
-            --exclude 'README.md' \
-            --exclude 'data' \
-            --exclude '.env' \
-            --exclude 'v1' \
-            --exclude 'initial_cooking.md' \
-            ./ deploy@72.60.218.33:/var/www/avantiterraform/
-
-      - name: Deploy v1 Next.js files
-        run: |
-          rsync -avz --delete \
-            --exclude 'node_modules' \
-            --exclude '.next' \
-            --exclude 'screenshots' \
-            --exclude 'tests' \
-            ./v1/ deploy@72.60.218.33:/var/www/avantiterraform/v1/
-
-      - name: Build and restart API container
-        run: |
-          ssh deploy@72.60.218.33 << 'ENDSSH'
-            cd /var/www/avantiterraform/api
-            docker build -t avantiterraform-api .
-            docker stop avantiterraform-api 2>/dev/null || true
-            docker rm avantiterraform-api 2>/dev/null || true
-            docker run -d \
-              --name avantiterraform-api \
-              --restart always \
-              -p 8001:8001 \
-              -v /var/www/avantiterraform/data:/var/www/avantiterraform/data \
-              --env-file /var/www/avantiterraform/.env \
-              avantiterraform-api
-          ENDSSH
-
-      - name: Build and restart v1 Next.js container
-        run: |
-          ssh deploy@72.60.218.33 << 'ENDSSH'
-            cd /var/www/avantiterraform/v1
-            npm install --production=false
-            npm run build
-            docker build -t avantiterraform-v1 .
-            docker stop avantiterraform-v1 2>/dev/null || true
-            docker rm avantiterraform-v1 2>/dev/null || true
-            docker run -d \
-              --name avantiterraform-v1 \
-              --restart always \
-              -p 3001:3000 \
-              avantiterraform-v1
-          ENDSSH
-
-      - name: Update nginx config
-        run: |
-          ssh deploy@72.60.218.33 << 'ENDSSH'
-            sudo cp /var/www/avantiterraform/v1/nginx/avantiterraform-v1.conf /etc/nginx/sites-available/avantiterraform.conf
-            sudo ln -sf /etc/nginx/sites-available/avantiterraform.conf /etc/nginx/sites-enabled/
-            sudo nginx -t && sudo systemctl reload nginx
-          ENDSSH
+          ssh ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} "cd /var/www/avantiterraform && ./deploy/run.sh"
