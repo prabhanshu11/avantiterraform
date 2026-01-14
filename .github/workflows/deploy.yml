@@ -25,7 +25,7 @@ jobs:
 
       - name: Deploy files to VPS
         run: |
-          ssh deploy@72.60.218.33 "mkdir -p /var/www/avantiterraform"
+          ssh deploy@72.60.218.33 "sudo mkdir -p /var/www/avantiterraform && sudo chown -R deploy:deploy /var/www/avantiterraform"
           rsync -avz --delete \
             --exclude '.git' \
             --exclude '.github' \
