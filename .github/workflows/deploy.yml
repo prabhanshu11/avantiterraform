@@ -60,17 +60,30 @@ jobs:
               avantiterraform-api
           ENDSSH
 
-      - name: Build v1 container (prepare for switch)
+      - name: Build and start v1 container for testing
         run: |
           ssh deploy@72.60.218.33 << 'ENDSSH'
             cd /var/www/avantiterraform/v1
             # Install dependencies and build on VPS
             if command -v npm &> /dev/null; then
-              npm ci --legacy-peer-deps
+              npm ci --legacy-peer-deps 2>/dev/null || npm install
               npm run build
             fi
-            # Build Docker image (ready to switch)
-            docker build -t avantiterraform-v1 . || echo "Docker build skipped - run switch script when ready"
+            # Build Docker image
+            docker build -t avantiterraform-v1 .
+            # Stop existing container if running
+            docker stop avantiterraform-v1 2>/dev/null || true
+            docker rm avantiterraform-v1 2>/dev/null || true
+            # Start container for testing preview
+            docker run -d \
+              --name avantiterraform-v1 \
+              --restart always \
+              -p 3001:3000 \
+              -v /var/www/avantiterraform/data:/data \
+              -e DATA_DIR=/data \
+              -e NODE_ENV=production \
+              avantiterraform-v1
+            echo "v1 container started on port 3001"
           ENDSSH
 
       - name: Reload nginx
@@ -80,5 +93,7 @@ jobs:
       - name: Deployment summary
         run: |
           echo "=== Deployment Complete ==="
-          echo "v0 (current): https://avantiterraform.com"
-          echo "v1 (ready): Run 'bash /var/www/avantiterraform/v1/scripts/switch-to-v1.sh' to switch"
+          echo "v0 (live): https://avantiterraform.com"
+          echo "v1 (preview): https://avantiterraform.com/testing/v1-8f4a2b9c/"
+          echo ""
+          echo "To make v1 live, run: bash /var/www/avantiterraform/v1/scripts/switch-to-v1.sh"
