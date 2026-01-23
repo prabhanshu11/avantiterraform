@@ -100,8 +100,8 @@ export default function ContactPage() {
               <p className="text-[#4a4a4a] mb-6">We&apos;ll respond within 24 hours.</p>
               <p className="text-sm text-[#4a4a4a]">
                 If urgent, WhatsApp us directly:{" "}
-                <a href="https://wa.me/918618112720" className="text-[#d35400] font-medium">
-                  +91 86181 12720
+                <a href="https://wa.me/918105294167" className="text-[#d35400] font-medium">
+                  +91 81052 94167
                 </a>
               </p>
             </div>

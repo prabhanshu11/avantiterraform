@@ -65,7 +65,7 @@ export default function HeroSection() {
               Request Quote
             </Link>
             <a
-              href="https://wa.me/918618112720?text=Hi%2C%20I%27m%20interested%20in%20your%20construction%20services."
+              href="https://wa.me/918105294167?text=Hi%2C%20I%27m%20interested%20in%20your%20construction%20services."
               target="_blank"
               rel="noopener noreferrer"
               className="border-2 border-[#2c3e50] text-[#2c3e50] hover:bg-[#2c3e50] hover:text-white px-8 py-3 rounded font-medium transition-colors text-center"

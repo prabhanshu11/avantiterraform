@@ -40,8 +40,8 @@ export default function Footer() {
             <h4 className="font-semibold text-white mb-4">Contact</h4>
             <div className="space-y-2 text-sm">
               <p>Sancoale, South Goa</p>
-              <a href="tel:+918618112720" className="block hover:text-[#d35400] transition-colors">
-                +91 86181 12720
+              <a href="tel:+918105294167" className="block hover:text-[#d35400] transition-colors">
+                +91 81052 94167
               </a>
               <a href="tel:+918660681084" className="block hover:text-[#d35400] transition-colors">
                 +91 86606 81084
