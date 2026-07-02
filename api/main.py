@@ -68,12 +68,12 @@ def save_submission(data: ContactForm) -> dict:
 
 
 def send_email_notification(data: ContactForm) -> bool:
-    """Send email notification via Zoho SMTP."""
-    smtp_host = os.getenv("SMTP_HOST", "smtp.zoho.in")
+    """Send email notification via configured SMTP provider."""
+    smtp_host = os.getenv("SMTP_HOST", "smtp.fastmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
     smtp_user = os.getenv("SMTP_USER", "")
     smtp_pass = os.getenv("SMTP_PASS", "")
-    notify_email = os.getenv("NOTIFY_EMAIL", "bharat@avantiterraform.com")
+    notify_email = os.getenv("NOTIFY_EMAIL", "prabhanshu@avantiterraform.com")
 
     if not smtp_user or not smtp_pass:
         print("SMTP credentials not configured, skipping email")

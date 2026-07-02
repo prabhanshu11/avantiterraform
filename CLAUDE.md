@@ -98,14 +98,22 @@ openssl s_client -servername avantiterraform.com -connect avantiterraform.com:44
 
 ## Contact Form Configuration
 
-### SMTP (Zoho)
-- **Host**: smtppro.zoho.in:587
-- **User**: bharat@avantiterraform.com (NOT contact@, which is an alias)
-- **Notify Email**: bharat@avantiterraform.com
+### SMTP (Fastmail)
+- **Host**: smtp.fastmail.com:587
+- **User**: prabhanshu@avantiterraform.com
+- **Notify Email**: prabhanshu@avantiterraform.com
+- **Password**: Fastmail app password, not the account login password
 
 ### Email Aliases
-- contact@avantiterraform.com → bharat@avantiterraform.com
-- careers@avantiterraform.com → (for hiring, needs Zoho setup)
+- Fastmail catch-all is enabled for `avantiterraform.com`.
+- Add explicit send aliases in Fastmail for `contact@avantiterraform.com`,
+  `bharat@avantiterraform.com`, and `careers@avantiterraform.com`.
+
+### Mail Migration Status
+- Mail was moved from Zoho to Fastmail on 2026-07-02.
+- Namecheap DNS remains authoritative; website A/CNAME records were preserved.
+- Fastmail accepted the domain for send/receive.
+- Old Zoho mailbox history still needs a later import via Zoho IMAP.
 
 ## Development Workflow
 

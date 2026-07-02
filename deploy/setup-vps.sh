@@ -87,13 +87,13 @@ if [ ! -f "$ENV_FILE" ]; then
     echo "   Creating .env file..."
     cat <<EOF | sudo -u "$DEPLOY_USER" tee "$ENV_FILE" > /dev/null
 # SMTP Configuration for contact form
-SMTP_HOST=smtppro.zoho.in
+SMTP_HOST=smtp.fastmail.com
 SMTP_PORT=587
-SMTP_USER=bharat@avantiterraform.com
+SMTP_USER=prabhanshu@avantiterraform.com
 SMTP_PASS=YOUR_APP_PASSWORD_HERE
-NOTIFY_EMAIL=bharat@avantiterraform.com
+NOTIFY_EMAIL=prabhanshu@avantiterraform.com
 EOF
-    echo "   ⚠️  Please update SMTP_PASS in $ENV_FILE with the Zoho app password!"
+    echo "   ⚠️  Please update SMTP_PASS in $ENV_FILE with the Fastmail app password!"
 else
     echo "   ✅ .env file already exists."
 fi
@@ -135,7 +135,7 @@ echo ""
 echo "🎉 VPS setup completed successfully!"
 echo "================================================"
 echo "Next steps:"
-echo "1. Update $ENV_FILE with Zoho app password"
+echo "1. Update $ENV_FILE with Fastmail app password"
 echo "2. Run: deploy-avantiterraform (or /var/www/avantiterraform/deploy/run.sh)"
 echo "3. Set up GitHub Actions secrets:"
 echo "   - SSH_PRIVATE_KEY: Same deploy key as personal-website"
