@@ -22,7 +22,7 @@
 ├── api/                # Contact form backend (Docker container)
 ├── deploy/             # Deployment scripts
 │   ├── run.sh          # Main deployment script
-│   └── nginx/          # nginx configs (HTTP only, certbot adds SSL)
+│   └── nginx/          # nginx configs (INCLUDING SSL — certbot never edits these)
 ├── data/               # Persistent data (contact form submissions)
 └── .env                # Environment variables (SMTP credentials)
 ```
@@ -50,31 +50,40 @@
 
 ### Critical Deployment Pattern
 The deployment script uses `git fetch + git reset --hard` instead of `git pull` because:
-1. Certbot modifies nginx config files on the VPS (adds SSL directives)
-2. These local changes would cause `git pull` to fail
+1. Historically certbot modified nginx config files on the VPS
+2. Any such local changes would cause `git pull` to fail
 3. The reset ensures repo state matches remote exactly
-4. Certbot `--reinstall` is run after to restore SSL config
 
 ```bash
 # In deploy/run.sh AND workflow
 git fetch origin master
 git reset --hard origin/master
-# ... then certbot --reinstall to restore SSL
 ```
 
 ## SSL/nginx Configuration
 
-### The Avantiterraform Incident (Jan 2026)
-**Problem**: avantiterraform.com was showing prabhanshu.space content
+### The Avantiterraform Incident (Jan 2026, recurred Aug 2026)
+**Problem**: avantiterraform.com shows a cert warning, then serves prabhanshu.space content
 
 **Root Cause**:
 - nginx with only ONE SSL-enabled server block serves that site for ALL HTTPS traffic
 - If site A has SSL but site B doesn't, https://siteB.com shows site A content
-- Deployment was overwriting certbot's SSL additions without re-running certbot
+- Deployment overwrote certbot's SSL additions; the `certbot --reinstall` step that
+  was supposed to restore them ran with `|| true`, so a silent certbot failure left
+  the site HTTP-only for months without failing the deploy
 
-**Solution**:
-1. Always use `certbot --reinstall` even when certificate exists
-2. Deployment script handles this automatically now
+**Solution (Aug 2026 — the durable one)**:
+1. The 443 server block lives in `deploy/nginx/avantiterraform.conf`, in git.
+   Certbot no longer edits nginx config at all.
+2. `deploy/run.sh` obtains the cert with `certbot certonly --webroot` BEFORE
+   installing the config (the config references the cert files, so `nginx -t`
+   needs them present).
+3. Two guards fail the deploy loudly instead of silently degrading:
+   - installed config must contain `listen 443 ssl`
+   - post-deploy TLS handshake on `127.0.0.1:443` must present the
+     avantiterraform.com certificate
+4. Do NOT reintroduce `certbot --nginx` / `--reinstall` here — that is the
+   fragile pattern that failed twice.
 
 **Diagnostic Commands** (read-only on VPS):
 ```bash
@@ -146,7 +155,7 @@ ssh laptop "cd ~/Programs/avantiterraform && git status --short"
 | `initial_cooking.md` | Project context, business details, conversation history |
 | `v1/next.config.ts` | Next.js config including basePath |
 | `deploy/run.sh` | Main deployment script |
-| `deploy/nginx/avantiterraform.conf` | nginx config (HTTP only) |
+| `deploy/nginx/avantiterraform.conf` | nginx config (HTTP + HTTPS/SSL) |
 | `.github/workflows/deploy.yml` | CI/CD workflow |
 
 ## Debugging

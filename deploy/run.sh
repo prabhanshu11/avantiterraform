@@ -74,6 +74,20 @@ docker run -d \
 cd ..
 
 # ==========================================
+# SSL CERTIFICATE (must exist before the nginx config is installed)
+# ==========================================
+# The repo nginx config contains the SSL directives itself, so the certificate
+# has to be on disk before `nginx -t` runs. Certbot never edits our config.
+if [ ! -f /etc/letsencrypt/live/avantiterraform.com/fullchain.pem ]; then
+    echo "🔒 Obtaining SSL certificate (webroot)..."
+    sudo certbot certonly --webroot -w /var/www/avantiterraform \
+        -d avantiterraform.com -d www.avantiterraform.com \
+        --non-interactive --agree-tos --email bharat@avantiterraform.com
+else
+    echo "🔒 SSL certificate present: $(sudo openssl x509 -in /etc/letsencrypt/live/avantiterraform.com/fullchain.pem -noout -enddate)"
+fi
+
+# ==========================================
 # NGINX CONFIG UPDATE
 # ==========================================
 echo "🔧 Updating nginx configuration..."
@@ -88,6 +102,13 @@ echo "📝 Installing new nginx config..."
 sudo cp "$REPO_NGINX_CONF" "$NGINX_CONF"
 sudo ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/avantiterraform.conf 2>/dev/null || true
 
+# Guard: the installed config MUST have an SSL server block. Without one, nginx
+# falls through to prabhanshu.space for https://avantiterraform.com.
+if ! grep -q "listen 443 ssl" "$NGINX_CONF"; then
+    echo "❌ Installed nginx config has no 'listen 443 ssl' block — refusing to reload!"
+    exit 1
+fi
+
 # Test and reload nginx
 if sudo nginx -t; then
     sudo systemctl reload nginx
@@ -95,21 +116,6 @@ if sudo nginx -t; then
 else
     echo "❌ Nginx config test failed!"
     exit 1
-fi
-
-# ==========================================
-# SSL CONFIGURATION
-# ==========================================
-# Always reinstall SSL config after copying nginx config, since the repo
-# version is HTTP-only and certbot needs to add the SSL directives
-if [ ! -f /etc/letsencrypt/live/avantiterraform.com/fullchain.pem ]; then
-    echo "🔒 Obtaining new SSL certificate..."
-    sudo certbot --nginx -d avantiterraform.com -d www.avantiterraform.com \
-        --non-interactive --agree-tos --email bharat@avantiterraform.com --redirect || true
-else
-    echo "🔒 Reinstalling SSL configuration to nginx..."
-    sudo certbot --nginx -d avantiterraform.com -d www.avantiterraform.com \
-        --reinstall --redirect --non-interactive || true
 fi
 
 # ==========================================
@@ -131,6 +137,17 @@ if curl -f http://localhost:3001/new > /dev/null 2>&1; then
 else
     echo "⚠️  V1 Next.js not responding"
     docker logs avantiterraform-v1 2>/dev/null | tail -20 || true
+fi
+
+echo "🔍 Testing HTTPS is served by OUR server block..."
+SERVED_CN=$(echo | openssl s_client -connect 127.0.0.1:443 -servername avantiterraform.com 2>/dev/null \
+    | openssl x509 -noout -subject 2>/dev/null)
+if echo "$SERVED_CN" | grep -q "avantiterraform.com"; then
+    echo "✅ HTTPS serving correct certificate ($SERVED_CN)"
+else
+    echo "❌ HTTPS is serving the WRONG certificate: ${SERVED_CN:-<none>}"
+    echo "   avantiterraform.com is falling through to another site's 443 block."
+    exit 1
 fi
 
 echo "🔍 Testing API..."
