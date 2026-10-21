@@ -75,9 +75,11 @@ def send_email_notification(data: ContactForm) -> bool:
     smtp_pass = os.getenv("SMTP_PASS", "")
     notify_email = os.getenv("NOTIFY_EMAIL", "prabhanshu@avantiterraform.com")
 
-    if not smtp_user or not smtp_pass:
-        print("SMTP credentials not configured, skipping email")
+    if not smtp_user:
+        print("SMTP_USER not configured, skipping email")
         return False
+    # SMTP_PASS may be empty when using Google Workspace's SMTP relay
+    # (smtp-relay.gmail.com), which authenticates the VPS by its IP address.
 
     try:
         msg = MIMEMultipart()
@@ -103,7 +105,8 @@ Submitted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
         with smtplib.SMTP(smtp_host, smtp_port) as server:
             server.starttls()
-            server.login(smtp_user, smtp_pass)
+            if smtp_pass:
+                server.login(smtp_user, smtp_pass)
             server.send_message(msg)
 
         return True

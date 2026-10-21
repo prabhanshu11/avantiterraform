@@ -1,24 +1,38 @@
 #!/usr/bin/env bash
-# Usage: copy the Fastmail app password to the clipboard, then run this script.
+# Usage: copy the SMTP app password to the clipboard, then run:
+#   scripts/set-vps-smtp-env.sh [google-relay|google|fastmail]      (default: google-relay)
+# google-relay needs no clipboard: Google's SMTP relay authenticates the VPS by IP
+# (Admin console -> Apps -> Gmail -> Routing -> SMTP relay service, IP 72.60.218.33).
 # Afterwards re-create the api container: gh workflow run deploy.yml --repo prabhanshu11/avantiterraform --ref master
 # (docker restart does NOT re-read --env-file; only a fresh `docker run` from deploy/run.sh does).
-# Writes Fastmail SMTP settings to the VPS .env for the avantiterraform contact form.
+# Writes SMTP settings to the VPS .env for the avantiterraform contact form.
 # The app password is read from the Wayland clipboard and piped straight to the VPS;
 # it is never printed or stored locally.
 set -euo pipefail
+PROVIDER="${1:-google-relay}"
+case "$PROVIDER" in
+  google-relay) SMTP_HOST=smtp-relay.gmail.com; LABEL="Google Workspace SMTP relay, IP-allowlisted, no password";;
+  google)   SMTP_HOST=smtp.gmail.com;    LABEL="Google Workspace SMTP, app password (pass: websites/google.com/app-passwords/avantiterraform-website-smtp)";;
+  fastmail) SMTP_HOST=smtp.fastmail.com; LABEL="Fastmail SMTP, app password named avantiterraform-website-smtp (pass: websites/fastmail.com/app-passwords/avantiterraform-website-smtp)";;
+  *) echo "unknown provider: $PROVIDER (use fastmail|google)" >&2; exit 2;;
+esac
 SCRATCH="${XDG_RUNTIME_DIR:-/tmp}"
 KEY="$(mktemp -p "$SCRATCH")"
 trap 'rm -f "$KEY"' EXIT
 pass show github/vps-deploy-key > "$KEY"; chmod 600 "$KEY"
-PW="$(wl-paste -n)"
-if [ "${#PW}" -lt 12 ] || [[ "$PW" == *" "* ]] || [[ "$PW" == *$'\n'* ]]; then
-  echo "clipboard does not look like an app password (len=${#PW}); aborting" >&2; exit 1
+if [ "$PROVIDER" = google-relay ]; then
+  PW=""
+else
+  PW="$(wl-paste -n | tr -d ' ')"   # Google shows app passwords as 4x4 groups separated by spaces
+  if [ "${#PW}" -lt 12 ] || [[ "$PW" == *$'\n'* ]]; then
+    echo "clipboard does not look like an app password (len=${#PW}); aborting" >&2; exit 1
+  fi
 fi
 printf '%s\n' "# SMTP settings for contact form email notifications" \
-  "# Fastmail SMTP, app password named avantiterraform-website-smtp (set $(date +%F))" \
-  "SMTP_HOST=smtp.fastmail.com" "SMTP_PORT=587" \
+  "# $LABEL (set $(date +%F))" \
+  "SMTP_HOST=$SMTP_HOST" "SMTP_PORT=587" \
   "SMTP_USER=prabhanshu@avantiterraform.com" "SMTP_PASS=$PW" \
   "NOTIFY_EMAIL=prabhanshu@avantiterraform.com" \
 | ssh -o BatchMode=yes -i "$KEY" root@72.60.218.33 \
-  'cp /var/www/avantiterraform/.env /var/www/avantiterraform/.env.bak-zoho 2>/dev/null; umask 077; cat > /var/www/avantiterraform/.env && chown deploy:deploy /var/www/avantiterraform/.env && chmod 600 /var/www/avantiterraform/.env && ls -l /var/www/avantiterraform/.env && sed -E "s/=(.{0,3}).*/=\1***/" /var/www/avantiterraform/.env'
+  'cp /var/www/avantiterraform/.env "/var/www/avantiterraform/.env.bak-$(date +%F)" 2>/dev/null; umask 077; cat > /var/www/avantiterraform/.env && chown deploy:deploy /var/www/avantiterraform/.env && chmod 600 /var/www/avantiterraform/.env && ls -l /var/www/avantiterraform/.env && sed -E "s/=(.{0,3}).*/=\1***/" /var/www/avantiterraform/.env'
 unset PW
